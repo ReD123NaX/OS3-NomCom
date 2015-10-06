@@ -22,7 +22,7 @@ def askCandidates(listname):
 def askSplitSize(rooms):
     splitsize = []
     for i in range(0, rooms):
-        splitsize.append(raw_input("How many candidates should be in room " + str(i) + "? "))
+        splitsize.append(int(raw_input("How many candidates should be in room " + str(i) + "? ")))
     return splitsize
 
 
@@ -55,7 +55,7 @@ def askKeySource():
     return keysource
 
 
-def executeNomCon(candidates, keysource, pool):
+def executeNomCom(candidates, keysource, pool):
     # candidates: The names you would like to select in alphabetical order
     # keysource: The keysource you would like to use
     # pool: Amount of values you would like to select
@@ -75,19 +75,19 @@ def executeNomCon(candidates, keysource, pool):
         inter = int("0x" + hex, 0)
         selected = inter % (pool - i)
         result.append(candidates[selected])
-
     # Output result
-    print result
+    return result
 
 
 ##
 # Varables
 ##
-candidates = []
-splitsize = []
+candidates = []  # The candidates per list
+splitsize = []  # The amount of candidates per classroom
+classroomcandidates = []  # Candidates separated over classrooms
 
 # Define how many classrooms
-classrooms = raw_input("How many classrooms are available: ")
+classrooms = int(raw_input("How many classrooms are available: "))
 
 ##
 # Create three pre-defined lists with candidates
@@ -95,15 +95,15 @@ classrooms = raw_input("How many classrooms are available: ")
 
 # List 0: New Full-Time Students
 candidates.append(askCandidates("new full-time students"))
-splitsize.append(askSplitSize(int(classrooms)))
+splitsize.append(askSplitSize(classrooms))
 
 # List 1: New Part-Time Students
 candidates.append(askCandidates("new part-time students"))
-splitsize.append(askSplitSize(int(classrooms)))
+splitsize.append(askSplitSize(classrooms))
 
 # List 2: Returning Students
 candidates.append(askCandidates("returning students"))
-splitsize.append(askSplitSize(int(classrooms)))
+splitsize.append(askSplitSize(classrooms))
 
 print candidates
 print splitsize
@@ -117,4 +117,27 @@ keysource = askKeySource()
 
 # Execute NomCom procedure
 for i in range(0, len(candidates)):
-    candidates[i] = executeNomCon(candidates[i], keysource, len(candidates[i]))
+    candidates[i] = executeNomCom(candidates[i], keysource, len(candidates[i]))
+
+print str(len(splitsize[0]))
+
+# Separate candidates over classrooms
+for lijst in range(0, len(candidates)):
+    candidatenumber = 0
+    for lokaal in range(0, len(splitsize[0])):
+        temp = []
+        for entry in range(candidatenumber, splitsize[lijst][lokaal]):
+            temp.append(candidates[lijst][entry])
+        # THIS GOES WRONG !!
+        if lijst == 0:
+            classroomcandidates.append(temp)
+        else:
+            classroomcandidates[lokaal].extend(temp)
+
+# Execute NomCom per classroom
+for i in range(0, classrooms):
+    print "Classroom " + str(i) + ":\n"
+    print "^ Seat ^ Name ^"
+    classroomcandidates[i] = executeNomCom(classroomcandidates[i], keysource, len(classroomcandidates[i]))
+    for j in range(0, len(classroomcandidates[i])):
+        print "| " + str((j + 1)) + " | " + classroomcandidates[i][j] + " |"
