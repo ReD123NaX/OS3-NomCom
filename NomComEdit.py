@@ -8,7 +8,7 @@ import struct
 
 def askCandidates(listname):
     # Ask for candidates and put them into a list
-    print "\nPlease enter the names of the " + listname + " in alphabetic order."
+    print "\nEnter the names of " + listname + " in alphabetic order."
     print "Please be aware that the names should be separated by ', '.\n"
 
     names = raw_input("Names: ")
@@ -28,7 +28,7 @@ def askSplitSize(rooms):
 
 def askKeySource():
     # Ask for key sources
-    print "\nPlease enter the numbers of the keysources."
+    print "\nEnter the numbers of the keysources."
     print "Please be aware that numbers should be separated by a space."
     print "Different key sources should be separated by ', '\n"
 
@@ -55,16 +55,17 @@ def askKeySource():
     return keysource
 
 
-def executeNomCom(candidates, keysource, pool):
+def executeNomCom(candidates, keysource, to_select):
     # candidates: The names you would like to select in alphabetical order
     # keysource: The keysource you would like to use
     # pool: Amount of values you would like to select
 
     # Create variables for function
     result = []
+    pool = len(candidates)
 
     # Execute function
-    for i in range(0, pool):
+    for i in range(0, to_select):
         m = hashlib.md5()
         pre = struct.pack('>H', i)
         m.update(pre)
@@ -75,9 +76,9 @@ def executeNomCom(candidates, keysource, pool):
         inter = int("0x" + hex, 0)
         selected = inter % (pool - i)
         result.append(candidates[selected])
+        candidates.pop(selected)
     # Output result
     return result
-
 
 ##
 # Varables
@@ -92,18 +93,20 @@ classrooms = int(raw_input("How many classrooms are available: "))
 ##
 # Create three pre-defined lists with candidates
 ##
+print "\nEnter the amount of lists that need to be created."
+print "Think of lists for: new students, part-time students, returning students and down-/upstairs students"
+lists = int(raw_input("How many lists need to be created: "))
 
-# List 0: New Full-Time Students
-candidates.append(askCandidates("new full-time students"))
-splitsize.append(askSplitSize(classrooms))
+# Ask for names
+listnames = []
+for i in range(0, lists):
+    listnames.append(raw_input("Enter the name for list " + str(i) + "? "))
 
-# List 1: New Part-Time Students
-candidates.append(askCandidates("new part-time students"))
-splitsize.append(askSplitSize(classrooms))
-
-# List 2: Returning Students
-candidates.append(askCandidates("returning students"))
-splitsize.append(askSplitSize(classrooms))
+# Ask names for each list
+for i in range(0, lists):
+    # List 0: New Full-Time Students
+    candidates.append(askCandidates(str(listnames[i])))
+    splitsize.append(askSplitSize(classrooms))
 
 print candidates
 print splitsize
@@ -119,25 +122,58 @@ keysource = askKeySource()
 for i in range(0, len(candidates)):
     candidates[i] = executeNomCom(candidates[i], keysource, len(candidates[i]))
 
-print str(len(splitsize[0]))
-
 # Separate candidates over classrooms
 for lijst in range(0, len(candidates)):
     candidatenumber = 0
+    count = 0
     for lokaal in range(0, len(splitsize[0])):
         temp = []
         for entry in range(candidatenumber, splitsize[lijst][lokaal]):
-            temp.append(candidates[lijst][entry])
+            temp.append(candidates[lijst][count])
+            count += 1
         # THIS GOES WRONG !!
         if lijst == 0:
             classroomcandidates.append(temp)
         else:
             classroomcandidates[lokaal].extend(temp)
 
-# Execute NomCom per classroom
+# Execute per classroom
 for i in range(0, classrooms):
-    print "Classroom " + str(i) + ":\n"
-    print "^ Seat ^ Name ^"
-    classroomcandidates[i] = executeNomCom(classroomcandidates[i], keysource, len(classroomcandidates[i]))
-    for j in range(0, len(classroomcandidates[i])):
-        print "| " + str((j + 1)) + " | " + classroomcandidates[i][j] + " |"
+    # Ask the seat offset of classroom
+    offset = int(raw_input("What is the first seat of classroom " + str(i) + ": ")) - 1
+    # Ask the seat where the teacher is located
+    teacher_seat = int(raw_input("What is the seat number of the lab teacher? "))
+    # Ask seats to be skipped
+    empty_seats = raw_input("\n Enter the seat numbers that need to be skipped. \nPlease separate with ', ' and leaf empty when no seats need to be skipped.\n\nSeat: ")
+    # Make this an array
+    empty_seats = empty_seats.split(', ')
+    # Convert to int values if necessary and add teacher seat
+    if empty_seats[0] == '':
+        empty_seats[0] = teacher_seat
+    else:
+        empty_seats = map(int, empty_seats)
+        empty_seats.append(teacher_seat)
+    # Sort values from small to large
+    empty_seats.sort()
+
+    # Execute NomCom over the new list
+    endlist = executeNomCom(classroomcandidates[i], keysource, len(classroomcandidates[i]))
+
+    # Insert teacher and empty seats
+    # If the list is too short, the teacher and empty seats will be added at the end of the list
+    for i in range(0, len(empty_seats)):
+        # Remove offset
+        empty_seats[i] -= offset + 1
+        # Is it a teacher seat?
+        if empty_seats[i] == teacher_seat - offset - 1:
+            # Insert teacher seat
+            endlist.insert(empty_seats[i], "Teacher")
+        else:
+            # Insert empty seat
+            endlist.insert(empty_seats[i], "Empty")
+
+    # Print seat order
+    print "\n^ Seat ^ Name ^"
+    for j in range(0, len(endlist)):
+        print "| " + str((j + 1 + offset)) + " | " + endlist[j] + " |"
+    print "\n"
