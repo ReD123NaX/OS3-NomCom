@@ -108,9 +108,6 @@ for i in range(0, lists):
     candidates.append(askCandidates(str(listnames[i])))
     splitsize.append(askSplitSize(classrooms))
 
-print candidates
-print splitsize
-
 ##
 # Execute NomCom procedure over the pre-defined lists
 ##
